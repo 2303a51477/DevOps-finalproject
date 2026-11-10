@@ -22,3 +22,4 @@ class User(Base):
     assessment_results = relationship("AssessmentResult", back_populates="user", cascade="all, delete-orphan")
     earned_certificates = relationship("Certificate", back_populates="learner", foreign_keys="Certificate.learner_id")
     issued_certificates = relationship("Certificate", back_populates="provider", foreign_keys="Certificate.provider_id")
+

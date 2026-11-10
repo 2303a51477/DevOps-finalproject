@@ -161,3 +161,4 @@ print('6. PDF Certificate Generated Successfully! Size:', len(pdf_res.content), 
 3. **Self-Healing & Scalability Verification**:
    - Deleting a backend pod (`kubectl delete pod <backend-pod-name>`) immediately results in the ReplicaSet provisioning a healthy replacement.
    - The application is reachable via NodePort service on port `30080` (Frontend) and port `30800` (Backend).
+

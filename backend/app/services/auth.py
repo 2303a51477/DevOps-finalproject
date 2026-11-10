@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import Any, Optional, List
 import jwt
 import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
+from app.mongo_db import is_mongo_db
+from app import mongo_repo
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
@@ -32,7 +33,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Any = Depends(get_db)) -> Any:
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,16 +53,21 @@ def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session 
         user_id = int(user_id_str)
     except Exception:
         raise credentials_exception
-        
-    user = db.query(User).filter(User.id == user_id).first()
+
+    if is_mongo_db(db):
+        user = mongo_repo.get_user_by_id(db, user_id)
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+
     if user is None:
         raise credentials_exception
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user account")
     return user
 
+
 def require_roles(allowed_roles: List[str]):
-    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+    def role_checker(current_user: Any = Depends(get_current_user)) -> Any:
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -69,3 +75,4 @@ def require_roles(allowed_roles: List[str]):
             )
         return current_user
     return role_checker
+

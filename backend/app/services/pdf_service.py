@@ -175,3 +175,4 @@ def generate_certificate_pdf(
     c.save()
     buffer.seek(0)
     return buffer
+

@@ -24,6 +24,8 @@ export const CourseListing = () => {
 
   const categories = [
     'all',
+    'Software Engineering',
+    'Systems & Security',
     'Cloud & DevOps',
     'Web Development',
     'Cybersecurity',
@@ -214,3 +216,4 @@ export const CourseListing = () => {
 };
 
 export default CourseListing;
+

@@ -12,9 +12,11 @@ import {
   CheckCircle2, 
   FileText,
   Search,
-  ChevronDown
+  ChevronDown,
+  Compass
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { ScreenDirectoryModal } from '../common/ScreenDirectoryModal';
 
 export const Navbar = ({ onToggleSidebar }) => {
   const { user, isAuthenticated, logout, isAdmin, isProvider, isLearner, isVerifier } = useAuth();
@@ -22,6 +24,7 @@ export const Navbar = ({ onToggleSidebar }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [verifySearch, setVerifySearch] = useState('');
+  const [screensModalOpen, setScreensModalOpen] = useState(false);
 
   const handleQuickVerify = (e) => {
     e.preventDefault();
@@ -104,6 +107,16 @@ export const Navbar = ({ onToggleSidebar }) => {
               <ShieldCheck className="w-4 h-4 text-sky-600" />
               <span>Verify Credential</span>
             </Link>
+
+            <button
+              onClick={() => setScreensModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 bg-sky-100/70 hover:bg-sky-200 border border-sky-300/80 px-2.5 py-1.5 rounded-lg transition-all shadow-sm"
+              title="Browse All 18 Application Screens"
+            >
+              <Compass className="w-3.5 h-3.5 text-sky-600" />
+              <span className="hidden sm:inline">18 Screens</span>
+              <span className="sm:hidden">Screens</span>
+            </button>
 
             {isAuthenticated ? (
               <div className="relative">
@@ -201,8 +214,13 @@ export const Navbar = ({ onToggleSidebar }) => {
           </div>
         </div>
       </div>
+      <ScreenDirectoryModal
+        isOpen={screensModalOpen}
+        onClose={() => setScreensModalOpen(false)}
+      />
     </header>
   );
 };
 
 export default Navbar;
+

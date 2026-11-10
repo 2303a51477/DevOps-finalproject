@@ -43,3 +43,4 @@ class AssessmentResult(Base):
 
     assessment = relationship("Assessment", back_populates="results")
     user = relationship("User", back_populates="assessment_results")
+

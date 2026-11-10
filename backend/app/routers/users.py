@@ -1,13 +1,15 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import get_db
 from app.models.user import User
+from app.mongo_db import is_mongo_db
+from app import mongo_repo
 from app.schemas.user import UserResponse, UserUpdate
 from app.services.auth import get_current_user, require_roles, get_password_hash
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
 
 @router.get("", response_model=List[UserResponse])
 def get_users(
@@ -15,47 +17,73 @@ def get_users(
     search: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["admin"]))
+    db: Any = Depends(get_db),
+    current_user: Any = Depends(require_roles(["admin"])),
 ):
+    if is_mongo_db(db):
+        return mongo_repo.list_users(db, role=role, search=search, limit=limit, offset=offset)
+
     query = db.query(User)
     if role and role.lower() != "all":
         query = query.filter(User.role == role.lower())
     if search:
         s = f"%{search}%"
         query = query.filter((User.name.ilike(s)) | (User.email.ilike(s)) | (User.organization.ilike(s)))
-        
+
     return query.order_by(User.id.desc()).offset(offset).limit(limit).all()
+
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user_by_id(
     user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Any = Depends(get_db),
+    current_user: Any = Depends(get_current_user),
 ):
     # Admin can view anyone, normal users can only view their own profile
     if current_user.role != "admin" and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-        
-    user = db.query(User).filter(User.id == user_id).first()
+
+    if is_mongo_db(db):
+        user = mongo_repo.get_user_by_id(db, user_id)
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
 
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: int,
     user_in: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Any = Depends(get_db),
+    current_user: Any = Depends(get_current_user),
 ):
     if current_user.role != "admin" and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-        
+
+    if is_mongo_db(db):
+        updates = {}
+        if user_in.name is not None:
+            updates["name"] = user_in.name.strip()
+        if user_in.email is not None:
+            updates["email"] = user_in.email.lower().strip()
+        if user_in.organization is not None:
+            updates["organization"] = user_in.organization.strip()
+        if user_in.password:
+            updates["password_hash"] = get_password_hash(user_in.password)
+        if current_user.role == "admin":
+            if user_in.role is not None:
+                updates["role"] = user_in.role.lower()
+            if user_in.is_active is not None:
+                updates["is_active"] = user_in.is_active
+        return mongo_repo.update_user(db, user_id, updates)
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        
+
     if user_in.name is not None:
         user.name = user_in.name.strip()
     if user_in.email is not None:
@@ -67,30 +95,36 @@ def update_user(
         user.organization = user_in.organization.strip()
     if user_in.password:
         user.password_hash = get_password_hash(user_in.password)
-        
+
     # Only admin can change role and active status
     if current_user.role == "admin":
         if user_in.role is not None:
             user.role = user_in.role.lower()
         if user_in.is_active is not None:
             user.is_active = user_in.is_active
-            
+
     db.commit()
     db.refresh(user)
     return user
 
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["admin"]))
+    db: Any = Depends(get_db),
+    current_user: Any = Depends(require_roles(["admin"])),
 ):
     if current_user.id == user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete your own admin account")
+
+    if is_mongo_db(db):
+        mongo_repo.delete_user(db, user_id)
+        return None
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        
+
     db.delete(user)
     db.commit()
     return None

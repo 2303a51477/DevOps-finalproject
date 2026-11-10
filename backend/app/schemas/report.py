@@ -53,3 +53,4 @@ class ReportResponse(BaseModel):
     summary_metrics: Dict[str, Any]
     chart_data: Dict[str, Any]
     records: List[Any]
+

@@ -40,3 +40,4 @@ export const StatsCard = ({ title, value, icon: Icon, change, changeType = 'posi
 };
 
 export default StatsCard;
+

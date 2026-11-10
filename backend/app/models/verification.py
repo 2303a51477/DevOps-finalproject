@@ -24,3 +24,4 @@ class SystemSetting(Base):
     value = Column(Text, nullable=False)
     description = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

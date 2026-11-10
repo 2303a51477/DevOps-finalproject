@@ -22,3 +22,4 @@ export const verificationService = {
 };
 
 export default verificationService;
+

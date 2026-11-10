@@ -32,3 +32,4 @@ export const Badge = ({ status, text, size = 'md' }) => {
 };
 
 export default Badge;
+

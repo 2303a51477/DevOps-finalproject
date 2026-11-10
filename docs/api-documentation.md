@@ -277,3 +277,4 @@
 | `/api/reports/verification-requests` | `GET` | JSON | Employer background verification history & results |
 | `/api/reports/learner-progress` | `GET` | JSON | Student progress %, completed modules, exam scores |
 | `/api/reports/export/csv/{report_type}` | `GET` | CSV | Direct streaming CSV export for any of the 4 reports |
+

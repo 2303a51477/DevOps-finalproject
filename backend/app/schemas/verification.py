@@ -37,3 +37,4 @@ class SettingResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

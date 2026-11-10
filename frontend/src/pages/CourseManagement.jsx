@@ -731,3 +731,4 @@ export const CourseManagement = () => {
 };
 
 export default CourseManagement;
+

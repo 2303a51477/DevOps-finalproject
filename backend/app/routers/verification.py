@@ -1,27 +1,31 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, status
 
 from app.database import get_db
 from app.models.certificate import Certificate
 from app.models.verification import VerificationRequest
+from app.mongo_db import is_mongo_db
+from app import mongo_repo
 from app.schemas.certificate import PublicVerificationResponse
 from app.schemas.verification import VerificationRequestCreate, VerificationRequestResponse
-from app.services.auth import get_current_user, require_roles
 
 router = APIRouter(tags=["Verification"])
 
+
 @router.get("/verify/{verification_id}", response_model=PublicVerificationResponse)
-def verify_credential(verification_id: str, db: Session = Depends(get_db)):
+def verify_credential(verification_id: str, db: Any = Depends(get_db)):
     clean_id = verification_id.strip()
-    
-    # Check by verification_id or certificate_id
-    cert = db.query(Certificate).filter(
-        (Certificate.verification_id.ilike(clean_id)) | 
-        (Certificate.certificate_id.ilike(clean_id))
-    ).first()
+
+    if is_mongo_db(db):
+        cert = mongo_repo.find_certificate_by_code(db, clean_id)
+    else:
+        # Check by verification_id or certificate_id
+        cert = db.query(Certificate).filter(
+            (Certificate.verification_id.ilike(clean_id)) |
+            (Certificate.certificate_id.ilike(clean_id))
+        ).first()
 
     now = datetime.utcnow()
 
@@ -39,7 +43,7 @@ def verify_credential(verification_id: str, db: Session = Depends(get_db)):
             "revocation_reason": "No record exists with this credential identifier.",
             "revoked_at": None,
             "qr_code_data": None,
-            "verified_at": now
+            "verified_at": now,
         }
 
     learner_name = cert.learner.name if cert.learner else "N/A"
@@ -49,7 +53,7 @@ def verify_credential(verification_id: str, db: Session = Depends(get_db)):
     return {
         "verification_id": cert.verification_id,
         "certificate_id": cert.certificate_id,
-        "status": cert.status.lower(), # 'valid' or 'revoked'
+        "status": cert.status.lower(),  # 'valid' or 'revoked'
         "learner_name": learner_name,
         "course_name": course_name,
         "provider_name": provider_name,
@@ -59,14 +63,18 @@ def verify_credential(verification_id: str, db: Session = Depends(get_db)):
         "revocation_reason": cert.revocation_reason if cert.status == "revoked" else None,
         "revoked_at": cert.revoked_at if cert.status == "revoked" else None,
         "qr_code_data": cert.qr_code_data,
-        "verified_at": now
+        "verified_at": now,
     }
+
 
 @router.post("/verification-requests", response_model=VerificationRequestResponse, status_code=status.HTTP_201_CREATED)
 def submit_verification_request(
     req_in: VerificationRequestCreate,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db),
 ):
+    if is_mongo_db(db):
+        return mongo_repo.create_verification_request(db, req_in)
+
     # Check if certificate exists to evaluate result
     cert = db.query(Certificate).filter(
         (Certificate.certificate_id.ilike(req_in.certificate_id.strip())) |
@@ -74,7 +82,7 @@ def submit_verification_request(
     ).first()
 
     status_result = "verified" if (cert and cert.status == "valid") else ("rejected" if (cert and cert.status == "revoked") else "pending")
-    
+
     unique_req_id = f"VR-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
 
     new_req = VerificationRequest(
@@ -86,19 +94,23 @@ def submit_verification_request(
         status=status_result,
         notes=req_in.notes,
         verified_at=datetime.utcnow(),
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
     db.add(new_req)
     db.commit()
     db.refresh(new_req)
     return new_req
 
+
 @router.get("/verification-requests", response_model=List[VerificationRequestResponse])
 def get_verification_requests(
     status_filter: Optional[str] = None,
     search: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db),
 ):
+    if is_mongo_db(db):
+        return mongo_repo.list_verification_requests(db, status_filter=status_filter, search=search)
+
     query = db.query(VerificationRequest)
     if status_filter and status_filter.lower() != "all":
         query = query.filter(VerificationRequest.status == status_filter.lower())

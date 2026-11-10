@@ -9,3 +9,4 @@ data:
   MYSQL_PORT: "3306"
   MYSQL_DATABASE: "credential_portal"
   FRONTEND_URL: "http://localhost:30080"
+

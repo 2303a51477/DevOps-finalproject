@@ -56,3 +56,4 @@ class AssessmentResultResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

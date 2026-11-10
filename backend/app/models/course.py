@@ -40,3 +40,4 @@ class CourseModule(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="modules")
+

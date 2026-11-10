@@ -19,3 +19,4 @@ __all__ = [
     "reports_router",
     "settings_router",
 ]
+

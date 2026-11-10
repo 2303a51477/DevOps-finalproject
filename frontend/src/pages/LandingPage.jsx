@@ -13,21 +13,24 @@ import {
   Building2, 
   FileCheck,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Compass
 } from 'lucide-react';
 import { courseService } from '../services/courseService';
+import { ScreenDirectoryModal } from '../components/common/ScreenDirectoryModal';
 
 export const LandingPage = () => {
   const [verificationInput, setVerificationInput] = useState('');
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [screensModalOpen, setScreensModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     async function loadFeaturedCourses() {
       try {
-        const data = await courseService.getCourses({ limit: 3 });
-        setCourses(data.slice(0, 3));
+        const data = await courseService.getCourses({ limit: 6 });
+        setCourses(data.slice(0, 6));
       } catch (err) {
         console.error(err);
       } finally {
@@ -114,6 +117,13 @@ export const LandingPage = () => {
               <span>Browse Accredited Courses</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <button
+              onClick={() => setScreensModalOpen(true)}
+              className="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm shadow-md shadow-sky-600/20 hover:shadow-lg transition-all flex items-center gap-2"
+            >
+              <Compass className="w-4 h-4" />
+              <span>18 Screens Directory</span>
+            </button>
             <Link
               to="/verifications/requests"
               className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm border border-slate-200 shadow-sm transition-all flex items-center gap-2"
@@ -306,8 +316,14 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      <ScreenDirectoryModal
+        isOpen={screensModalOpen}
+        onClose={() => setScreensModalOpen(false)}
+      />
     </div>
   );
 };
 
 export default LandingPage;
+

@@ -12,13 +12,20 @@ from app.models.enrollment import Enrollment
 from app.models.assessment import Assessment, AssessmentResult
 from app.models.certificate import Certificate
 from app.models.verification import VerificationRequest
+from app.mongo_db import is_mongo_db
+from app import mongo_repo
+
 
 def get_certificate_issuance_report_data(
-    db: Session,
+    db: Any,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     status_filter: Optional[str] = None
 ) -> Dict[str, Any]:
+    if is_mongo_db(db):
+        return mongo_repo.get_certificate_issuance_report_data(
+            db, start_date=start_date, end_date=end_date, status_filter=status_filter
+        )
     query = db.query(Certificate)
     if start_date:
         query = query.filter(Certificate.issue_date >= start_date)
@@ -78,9 +85,11 @@ def get_certificate_issuance_report_data(
     }
 
 def get_course_completion_report_data(
-    db: Session,
+    db: Any,
     category_filter: Optional[str] = None
 ) -> Dict[str, Any]:
+    if is_mongo_db(db):
+        return mongo_repo.get_course_completion_report_data(db, category_filter=category_filter)
     query = db.query(Course)
     if category_filter and category_filter.lower() != "all":
         query = query.filter(Course.category == category_filter)
@@ -141,9 +150,11 @@ def get_course_completion_report_data(
     }
 
 def get_verification_requests_report_data(
-    db: Session,
+    db: Any,
     status_filter: Optional[str] = None
 ) -> Dict[str, Any]:
+    if is_mongo_db(db):
+        return mongo_repo.get_verification_requests_report_data(db, status_filter=status_filter)
     query = db.query(VerificationRequest)
     if status_filter and status_filter.lower() != "all":
         query = query.filter(VerificationRequest.status == status_filter.lower())
@@ -186,9 +197,11 @@ def get_verification_requests_report_data(
     }
 
 def get_learner_progress_report_data(
-    db: Session,
+    db: Any,
     course_id: Optional[int] = None
 ) -> Dict[str, Any]:
+    if is_mongo_db(db):
+        return mongo_repo.get_learner_progress_report_data(db, course_id=course_id)
     query = db.query(Enrollment)
     if course_id:
         query = query.filter(Enrollment.course_id == course_id)
@@ -267,3 +280,4 @@ def generate_csv_from_records(records: List[Dict[str, Any]], fieldnames: List[st
         writer.writerow(row)
     output.seek(0)
     return output
+

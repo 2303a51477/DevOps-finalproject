@@ -91,3 +91,4 @@ The **Online Course Certification and Credential Verification Portal** is engine
   - Decoupled configuration via `portal-config` ConfigMap and `portal-secret` Secret.
   - Zero-downtime rolling updates (`RollingUpdate` strategy) and automatic liveness/readiness health probes.
   - NodePort service exposure (`nodePort: 30080` for Frontend, `nodePort: 30800` for Backend).
+

@@ -1,13 +1,10 @@
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import Any, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import User
 from app.schemas.report import ReportResponse
-from app.services.auth import get_current_user, require_roles
 from app.services.report_service import (
     get_certificate_issuance_report_data,
     get_course_completion_report_data,
@@ -21,35 +18,35 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 @router.get("/certificate-issuance", response_model=ReportResponse)
 def certificate_issuance_report(
     status_filter: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     return get_certificate_issuance_report_data(db, status_filter=status_filter)
 
 @router.get("/course-completion", response_model=ReportResponse)
 def course_completion_report(
     category: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     return get_course_completion_report_data(db, category_filter=category)
 
 @router.get("/verification-requests", response_model=ReportResponse)
 def verification_requests_report(
     status_filter: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     return get_verification_requests_report_data(db, status_filter=status_filter)
 
 @router.get("/learner-progress", response_model=ReportResponse)
 def learner_progress_report(
     course_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     return get_learner_progress_report_data(db, course_id=course_id)
 
 @router.get("/export/csv/{report_type}")
 def export_report_csv(
     report_type: str,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     clean_type = report_type.lower().strip()
     
@@ -82,3 +79,4 @@ def export_report_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+

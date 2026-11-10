@@ -247,3 +247,4 @@ Maintains audit logs of employer background checks.
 | `notes` | TEXT | NULL | Candidate audit notes |
 | `verified_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Verification execution date |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Inquiry created date |
+

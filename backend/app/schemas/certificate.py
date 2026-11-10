@@ -47,3 +47,4 @@ class PublicVerificationResponse(BaseModel):
     revoked_at: Optional[datetime] = None
     qr_code_data: Optional[str] = None
     verified_at: datetime
+

@@ -77,3 +77,4 @@ networks:
 volumes:
   portal_mysql_data:
     driver: local
+

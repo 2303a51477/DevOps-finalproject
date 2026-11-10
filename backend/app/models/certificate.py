@@ -23,3 +23,4 @@ class Certificate(Base):
     learner = relationship("User", foreign_keys=[learner_id], back_populates="earned_certificates")
     provider = relationship("User", foreign_keys=[provider_id], back_populates="issued_certificates")
     course = relationship("Course", back_populates="certificates")
+
